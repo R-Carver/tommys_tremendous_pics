@@ -7,8 +7,10 @@
   "scripts": {
     "mock:prepare": "node frontend/mock/prepare-mock-data.mjs",
     "mock": "node frontend/mock/mock-server.mjs",
-    "seed": "node backend/scripts/seed-local.mjs",
+    "seed": "node backend/scripts/seed.mjs",
+    "seed:remote": "node backend/scripts/seed.mjs --remote",
     "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
     "test:e2e": "playwright test",
     "test:e2e:mock": "MOCK=1 BASE_URL=http://localhost:8788 playwright test"
   },

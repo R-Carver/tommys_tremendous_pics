@@ -1,6 +1,6 @@
 // Shared dev tooling: turns photos from local-images/ into the two sizes the site uses.
 // Used by the frontend mock (frontend/mock/prepare-mock-data.mjs) and the local backend seed
-// (backend/scripts/seed-local.mjs), so both produce identical images.
+// (backend/scripts/seed.mjs), so both produce identical images.
 // Later the admin page does the same resizing in the browser (decision D-006).
 
 import { createHash } from 'node:crypto';

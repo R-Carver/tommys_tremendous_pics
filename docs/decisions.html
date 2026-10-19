@@ -86,8 +86,8 @@
   <tr><th>Step</th><th>Content</th><th>Status</th></tr>
   <tr><td>0</td><td>Frontend draft against a mock API (D-010 to D-013).</td><td><span class="tag accepted">Done</span></td></tr>
   <tr><td>1</td><td><strong>Backend read path, local.</strong> Worker with <code>GET /api/gallery</code> and <code>GET /img/*</code> reading from R2. Run locally with <code>wrangler dev</code> and a simulated R2 bucket. Seed script loads <code>local-images/</code>. Frontend must work unchanged. Repo split into frontend and backend. Automated smoke tests.</td><td><span class="tag accepted">Done</span></td></tr>
-  <tr><td>2</td><td><strong>Admin and write path.</strong> Basic Auth middleware for <code>/admin</code> and <code>/api/admin/*</code>. Upload (browser resizes), save order and categories, delete. One plain admin page with up/down buttons, category dropdown and delete button.</td><td><span class="tag todo">Next</span></td></tr>
-  <tr><td>3</td><td><strong>Deploy to Cloudflare</strong> (needs David). <code>wrangler login</code>, create the R2 bucket (check payment method question), set secret <code>ADMIN_PASSWORD</code>, <code>wrangler deploy</code>, upload the first real images through the admin page.</td><td><span class="tag todo">Open</span></td></tr>
+  <tr><td>2</td><td><strong>Deploy to Cloudflare</strong> (swapped with the admin step on 2026-10-19, so we can test the live read-only site first). In the Cloudflare dashboard (D-019): enable R2 (check payment method question), create bucket <code>tommys-pics-images</code>, choose the <code>workers.dev</code> subdomain. From the Mac: <code>npm run seed:remote -- --yes</code> uploads the photos, then deploy (method still open, see D-019). Then run the smoke tests against the live URL.</td><td><span class="tag doing">Next</span></td></tr>
+  <tr><td>3</td><td><strong>Admin and write path.</strong> Basic Auth middleware for <code>/admin</code> and <code>/api/admin/*</code>. Upload (browser resizes), save order and categories, delete. One plain admin page with up/down buttons, category dropdown and delete button. Set secret <code>ADMIN_PASSWORD</code> in the dashboard.</td><td><span class="tag todo">Open</span></td></tr>
   <tr><td>4</td><td><strong>Polish before going live.</strong> Self-host the Roboto font (GDPR), replace placeholder texts, decide on visible categories (D-011), favicon (done), metadata for link previews.</td><td><span class="tag todo">Open</span></td></tr>
 </table>
 
@@ -236,7 +236,7 @@ manifest.json
   <dl>
     <dt>Decision</dt><dd>The site runs as one Cloudflare Worker with static assets. <code>wrangler.jsonc</code> points the static files to <code>frontend/public</code> and the Worker code to <code>backend/src/index.js</code>. The paths <code>/api/*</code> and <code>/img/*</code> always go to the Worker (<code>run_worker_first</code>). Everything else is served as a static file.</dd>
     <dt>Why</dt><dd>Pages Functions must live in a folder named <code>functions/</code> at the project root, next to the static files. That blocks a clean frontend/backend split. With Workers, both locations are free to choose. Workers with static assets is also the setup Cloudflare currently recommends for new projects. Static file requests are free and do not count against the Worker limit (100,000 requests per day on the free plan).</dd>
-    <dt>Later</dt><dd>For the admin page (step 2), <code>/admin*</code> is added to <code>run_worker_first</code>, so the Worker can check the password before the admin page is served.</dd>
+    <dt>Later</dt><dd>For the admin page (step 3), <code>/admin*</code> is added to <code>run_worker_first</code>, so the Worker can check the password before the admin page is served.</dd>
     <dt>Alternatives</dt><dd>Keep Pages (D-002) with <code>functions/</code> at the root. Rejected because of the folder constraint.</dd>
   </dl>
 </section>
@@ -248,7 +248,7 @@ manifest.json
 <pre><code>frontend/public/   static site, deployed as-is (no build step)
 frontend/mock/     mock API server + mock data builder (frontend dev only)
 backend/src/       Worker: routing, /api/gallery, /img/*, manifest handling
-backend/scripts/   seed-local.mjs: fills the LOCAL simulated R2 bucket
+backend/scripts/   seed.mjs: fills the local simulated R2 bucket, or the real one with --remote
 tools/             dev tooling shared by both (image resizing)
 tests/             Playwright smoke tests (frontend + backend API)
 docs/              decisions, API contract
@@ -283,6 +283,21 @@ wrangler.jsonc     deployment config that joins frontend and backend</code></pre
   </dl>
 </section>
 
+<section class="decision">
+  <header><span class="id">D-019</span><h3>Cloudflare setup: dashboard for account things, code for configuration</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>
+      <ul>
+        <li><strong>Dashboard (UI):</strong> account, enabling R2, creating the bucket, the <code>workers.dev</code> subdomain, secrets such as <code>ADMIN_PASSWORD</code>, logs and usage.</li>
+        <li><strong>Code (<code>wrangler.jsonc</code>):</strong> Worker name, bindings (R2, assets), routing rules, compatibility date. These are not changed in the dashboard, because every deploy overwrites them with the file.</li>
+        <li><strong>Photo upload until the admin page exists:</strong> <code>npm run seed:remote -- --yes</code> from the Mac. It needs <code>wrangler login</code> once. It uploads exactly the file names the Worker expects and writes <code>manifest.json</code> last. Use <code>--dry-run</code> to preview. Manual uploads in the R2 dashboard are possible but not recommended, because each image needs two files with generated names plus a matching manifest entry.</li>
+      </ul>
+    </dd>
+    <dt>Why</dt><dd>David prefers the dashboard where possible. Keeping configuration in the file avoids settings that silently disappear on the next deploy, and keeps the setup reproducible.</dd>
+    <dt>Open</dt><dd>Deploy method: (a) <code>npm run deploy</code> from the Mac, or (b) Git integration in the dashboard (Workers Builds), which deploys on every push and needs the repo on GitHub or GitLab.</dd>
+  </dl>
+</section>
+
 <h2>Planned API</h2>
 <table>
   <tr><th>Method</th><th>Path</th><th>Access</th><th>Purpose</th></tr>
@@ -307,6 +322,7 @@ wrangler.jsonc     deployment config that joins frontend and backend</code></pre
 <table>
   <tr><th>Date</th><th>Change</th></tr>
   <tr><td>2026-10-19</td><td>File created. Recorded D-001 to D-009 from phases 1 and 2.</td></tr>
+  <tr><td>2026-10-19</td><td>Swapped steps 2 and 3: deploy before the admin page. Added D-019 (dashboard vs. code) and <code>npm run seed:remote</code> as a stopgap for uploading photos. Renamed <code>seed-local.mjs</code> to <code>seed.mjs</code>.</td></tr>
   <tr><td>2026-10-19</td><td>Step 1 done: backend read path. Added the phase 3 plan and progress table, and D-014 to D-018. D-002 superseded (Workers instead of Pages). Repo split into <code>frontend/</code> and <code>backend/</code>. Added favicon.</td></tr>
   <tr><td>2026-10-19</td><td>Frontend draft: D-010 to D-013. Endpoint renamed from <code>/api/manifest</code> to <code>/api/gallery</code>. Added open questions about Google Fonts and placeholder texts.</td></tr>
   <tr><td>2026-10-19</td><td>Added <code>.gitignore</code>. Secrets for local development go in <code>.dev.vars</code>, which is ignored. Real photos live in R2, not in Git.</td></tr>

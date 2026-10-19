@@ -16,7 +16,7 @@ frontend/public/        Static site, deployed as-is (no build step)
   assets/css/custom.css Project style overrides (main.css stays original)
 frontend/mock/          Mock API for frontend-only development
 backend/src/            Cloudflare Worker: /api/gallery, /img/*, manifest handling
-backend/scripts/        seed-local.mjs: fills the local simulated R2 bucket
+backend/scripts/        seed.mjs: fills the local (or, with --remote, the real) R2 bucket
 tools/                  Dev tooling shared by both (image resizing), never deployed
 tests/                  Playwright smoke tests
 docs/                   Decisions and API contract
@@ -64,6 +64,20 @@ Mock scenarios (only the mock server knows about them):
 | `/?scenario=broken` | One image file is missing |
 | `/?scenario=single` | Only one image |
 
+## Deploy to Cloudflare
+
+One-time setup in the Cloudflare dashboard: enable R2, create the bucket `tommys-pics-images`,
+choose a `workers.dev` subdomain. Then, from this folder:
+
+```bash
+npx wrangler login                    # once, opens the browser
+npm run seed:remote -- --dry-run      # preview what would be uploaded
+npm run seed:remote -- --yes          # upload local-images/ to the real bucket
+npm run deploy                        # deploy frontend + Worker
+```
+
+Bindings and routing live in `wrangler.jsonc`. Do not change them in the dashboard; each deploy overwrites them.
+
 ## Tests
 
 Start a server first, then run the tests against it in a second terminal:
@@ -72,6 +86,8 @@ Start a server first, then run the tests against it in a second terminal:
 npm run dev    # then: npm run test:e2e        (frontend + backend API tests)
 npm run mock   # then: npm run test:e2e:mock   (frontend tests incl. error scenarios)
 ```
+
+Against the live site: `BASE_URL=https://tommys-pics.<subdomain>.workers.dev npm run test:e2e`
 
 ## License
 
