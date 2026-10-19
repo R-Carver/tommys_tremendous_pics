@@ -21,6 +21,9 @@ pnpm-debug.log*
 # Local test images (real photos are stored in R2, not in Git)
 local-images/
 
+# Generated mock data for local frontend development (npm run mock:prepare)
+.mock-data/
+
 # OS files
 .DS_Store
 Thumbs.db

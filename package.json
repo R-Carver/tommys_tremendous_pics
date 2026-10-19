@@ -1,0 +1,14 @@
+{
+  "name": "tommys-pics",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Portfolio website for a photographer. Static frontend on Cloudflare Pages, images in R2.",
+  "type": "module",
+  "scripts": {
+    "mock:prepare": "node dev/prepare-mock-data.mjs",
+    "mock": "node dev/mock-server.mjs"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5"
+  }
+}

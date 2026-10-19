@@ -75,7 +75,7 @@
   <tr><th>Phase</th><th>Goal</th><th>Status</th></tr>
   <tr><td>1</td><td>Choose a template as the starting point.</td><td><span class="tag accepted">Done</span></td></tr>
   <tr><td>2</td><td>Define features and choose the technology.</td><td><span class="tag accepted">Done</span></td></tr>
-  <tr><td>3</td><td>Implement, host, and build the minimal CMS.</td><td><span class="tag open">Next</span></td></tr>
+  <tr><td>3</td><td>Implement, host, and build the minimal CMS.</td><td><span class="tag open">In progress: frontend draft done</span></td></tr>
 </table>
 
 <h2>Decisions</h2>
@@ -173,10 +173,53 @@ manifest.json
   </dl>
 </section>
 
+<section class="decision">
+  <header><span class="id">D-010</span><h3>Frontend/backend boundary: <code>GET /api/gallery</code></h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>The public frontend depends only on <code>GET /api/gallery</code>. The response contains categories, images and complete image URLs. The full contract is in <a href="api-contract.md"><code>docs/api-contract.md</code></a>.</dd>
+    <dt>Why</dt><dd>The frontend must not know where images are stored or how they got there. Then the frontend can be built and tested before the backend exists, and the tests stay valid when the real backend replaces the mock.</dd>
+    <dt>Rules</dt><dd>The frontend treats image URLs as opaque strings and never builds storage paths. Array order is display order. Unknown fields are ignored. The stored <code>manifest.json</code> (D-005) is a backend detail; <code>/api/gallery</code> is a view of it.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-011</span><h3>Categories: mixed into one list for now</h3><span class="tag open">Provisional</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>The first draft shows all images in one list. Categories are interleaved round-robin (one image from each category in turn), and the order inside each category is kept. The setting <code>CATEGORY_MODE</code> in <code>gallery.js</code> also supports <code>'grouped'</code>.</dd>
+    <dt>Why</dt><dd>It is not yet decided whether visitors should see categories at all. The API and data model keep categories, so a category menu can be added later without backend changes.</dd>
+    <dt>Open</dt><dd>Show a category menu or not. If yes: filter in place, or one page per category.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-012</span><h3>Local development with a mock API</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>Stage 1 (now): <code>dev/mock-server.mjs</code> serves <code>public/</code>, <code>/api/gallery</code> and <code>/img/*</code> from generated mock data. <code>dev/prepare-mock-data.mjs</code> builds that data from <code>local-images/&lt;category&gt;/</code> with the same sizes the admin page will produce. Stage 2 (later): <code>wrangler pages dev</code> runs the real backend locally with a simulated R2 bucket (Miniflare).</dd>
+    <dt>Why</dt><dd>Everything must be testable locally. The mock can simulate situations on demand (<code>?scenario=empty|error|slow|broken|single</code>), which the real backend cannot easily do.</dd>
+    <dt>Notes</dt><dd>The mock server uses port 8788, the same default as <code>wrangler pages dev</code>. The scenario is read from the page URL via the Referer header, so the frontend code contains no test logic.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-013</span><h3>Template adjustments</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>
+      <ul>
+        <li>Lens files are kept original where possible. Project styles go in <code>assets/css/custom.css</code>.</li>
+        <li><code>main.js</code> is loaded by <code>gallery.js</code> after the thumbnails exist, because Lens reads them only once at start.</li>
+        <li>One patch in <code>main.js</code> (marked <code>[tommys_pics]</code>): the viewer also continues when an image fails to load. Without it, one missing image locks the whole viewer.</li>
+        <li>The viewer shows the whole photo (<code>contain</code>) instead of cropping it (<code>cover</code>).</li>
+        <li>Thumbnails are square and slightly muted; they turn to full color on hover and when active.</li>
+      </ul>
+    </dd>
+    <dt>Verified</dt><dd>Tested in headless Chromium at 1440×900 and 390×844 with all mock scenarios: thumbnails render, viewer and keyboard navigation work, empty/error messages show, a broken image no longer blocks navigation.</dd>
+  </dl>
+</section>
+
 <h2>Planned API</h2>
 <table>
   <tr><th>Method</th><th>Path</th><th>Access</th><th>Purpose</th></tr>
-  <tr><td>GET</td><td><code>/api/manifest</code></td><td>Public</td><td>Returns the manifest.</td></tr>
+  <tr><td>GET</td><td><code>/api/gallery</code></td><td>Public</td><td>Returns categories and images with URLs (see D-010).</td></tr>
   <tr><td>GET</td><td><code>/img/&lt;path&gt;</code></td><td>Public</td><td>Returns an image from R2.</td></tr>
   <tr><td>POST</td><td><code>/api/admin/upload</code></td><td>Admin</td><td>Stores the full image and thumbnail.</td></tr>
   <tr><td>PUT</td><td><code>/api/admin/manifest</code></td><td>Admin</td><td>Saves categories and order.</td></tr>
@@ -186,7 +229,9 @@ manifest.json
 <h2>Open questions</h2>
 <ul>
   <li>Photographer name, bio text and contact details.</li>
-  <li>Final list of categories (4–6).</li>
+  <li>Final list of categories (4–6), and whether visitors see categories at all (D-011).</li>
+  <li>The Lens CSS loads the Roboto font from Google Fonts. For a site run from Germany this is a GDPR (General Data Protection Regulation) risk; we should host the font ourselves before going live.</li>
+  <li>Placeholder texts in <code>index.html</code> (name "Tommy", tagline, Instagram link, email).</li>
   <li>Does activating R2 require a payment method on this Cloudflare account? If yes, is that acceptable? (See D-004.)</li>
   <li>Where to place the HTML5 UP attribution.</li>
 </ul>
@@ -195,6 +240,7 @@ manifest.json
 <table>
   <tr><th>Date</th><th>Change</th></tr>
   <tr><td>2026-10-19</td><td>File created. Recorded D-001 to D-009 from phases 1 and 2.</td></tr>
+  <tr><td>2026-10-19</td><td>Frontend draft: D-010 to D-013. Endpoint renamed from <code>/api/manifest</code> to <code>/api/gallery</code>. Added open questions about Google Fonts and placeholder texts.</td></tr>
   <tr><td>2026-10-19</td><td>Added <code>.gitignore</code>. Secrets for local development go in <code>.dev.vars</code>, which is ignored. Real photos live in R2, not in Git.</td></tr>
 </table>
 
