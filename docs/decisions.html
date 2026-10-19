@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Decisions – tommys_pics</title>
+<style>
+  :root {
+    --bg: #fafaf8; --fg: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
+    --card: #ffffff; --accent: #2f5d8a;
+    --ok-bg: #e5f2e8; --ok-fg: #1f6b35;
+    --open-bg: #fdf1dc; --open-fg: #8a5a00;
+    --old-bg: #ececec; --old-fg: #666;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161615; --fg: #ecece8; --muted: #9a9a94; --line: #2e2e2c;
+      --card: #1e1e1d; --accent: #8db8e3;
+      --ok-bg: #1d3324; --ok-fg: #8fd6a3;
+      --open-bg: #3a2e14; --open-fg: #f0c674;
+      --old-bg: #2a2a2a; --old-fg: #aaa;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 40px 16px 80px; }
+  h1 { font-size: 1.9rem; margin: 0 0 4px; }
+  h2 { font-size: 1.25rem; margin: 48px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 0; }
+  p.lead { color: var(--muted); margin: 0 0 8px; }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em;
+    background: var(--line); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--card); border: 1px solid var(--line); border-radius: 6px;
+    padding: 12px; overflow-x: auto; font-size: .85rem; }
+  pre code { background: none; padding: 0; }
+  ul { padding-left: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .85rem; }
+  .decision { background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+    padding: 16px 18px; margin: 12px 0; }
+  .decision header { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin-bottom: 8px; }
+  .id { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: .9rem; }
+  .date { color: var(--muted); font-size: .85rem; margin-left: auto; }
+  .tag { font-size: .75rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+  .tag.accepted { background: var(--ok-bg); color: var(--ok-fg); }
+  .tag.open { background: var(--open-bg); color: var(--open-fg); }
+  .tag.superseded { background: var(--old-bg); color: var(--old-fg); }
+  dl { margin: 0; display: grid; grid-template-columns: 120px 1fr; gap: 4px 12px; }
+  dt { color: var(--muted); font-size: .9rem; }
+  dd { margin: 0; }
+  @media (max-width: 600px) { dl { grid-template-columns: 1fr; } dt { margin-top: 6px; } }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Project Decisions</h1>
+<p class="lead">tommys_pics: portfolio website for a starting professional photographer.</p>
+<p class="lead">This file is the single record of project decisions. Update it whenever a decision is made, changed or reversed. Do not delete old decisions; mark them as superseded.</p>
+
+<h2>Constraints</h2>
+<ul>
+  <li>A first version must be ready to demonstrate within 1–2 hours of implementation.</li>
+  <li>Hosting is on Cloudflare, free plan. No custom domain is needed at the start.</li>
+  <li>A very simple CMS (content management system) is mandatory. An admin must be able to upload images, set their category and set their order.</li>
+  <li>The CMS security must be very simple and quick to implement.</li>
+  <li>Expected volume: 20–100 images at the start, in 4–6 categories.</li>
+</ul>
+
+<h2>Phases</h2>
+<table>
+  <tr><th>Phase</th><th>Goal</th><th>Status</th></tr>
+  <tr><td>1</td><td>Choose a template as the starting point.</td><td><span class="tag accepted">Done</span></td></tr>
+  <tr><td>2</td><td>Define features and choose the technology.</td><td><span class="tag accepted">Done</span></td></tr>
+  <tr><td>3</td><td>Implement, host, and build the minimal CMS.</td><td><span class="tag open">Next</span></td></tr>
+</table>
+
+<h2>Decisions</h2>
+
+<section class="decision">
+  <header><span class="id">D-001</span><h3>Base template: HTML5 UP "Lens"</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>We use <a href="https://html5up.net/lens">HTML5 UP Lens</a> as the base of the public website.</dd>
+    <dt>Why</dt><dd>It is built only for photos. It has a thumbnail strip and a full-screen viewer with smooth crossfades. It is plain static HTML, CSS and JS with no extra complexity.</dd>
+    <dt>Alternatives</dt><dd>HTML5 UP Multiverse, HTML5 UP Big Picture, and hosted builders such as Pixpa (look only, no reusable code).</dd>
+    <dt>Notes</dt><dd>The license is Creative Commons Attribution. The site must credit HTML5 UP, for example with a footer link. Lens has no categories, so we add a category menu ourselves. Style ideas to borrow later: color fading in on hover (Brother Jones, Pedro Agostinho Cruz).</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-002</span><h3>Hosting: Cloudflare Pages (free plan)</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>The site is hosted on Cloudflare Pages under the free <code>*.pages.dev</code> address.</dd>
+    <dt>Why</dt><dd>It is free, fast, and can run small server functions next to the static site.</dd>
+    <dt>Notes</dt><dd>A custom domain can be added later without changing the code.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-003</span><h3>Architecture: static site + Pages Functions + custom mini CMS (Option B)</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>The public site is static. It loads the image list at runtime from an API. A small admin page and a few Pages Functions handle upload, ordering and deletion. No framework and no build step.</dd>
+    <dt>Why</dt><dd>Changes appear immediately without a rebuild. No external accounts are needed. The code is small (about 200–300 lines) and fully under our control.</dd>
+    <dt>Alternatives</dt><dd>Option A: images in the Git repository and a Git-based CMS (Decap CMS or Sveltia CMS). Rejected because every change needs a rebuild, the admin needs a GitHub account, and the OAuth login setup is too slow for the time budget.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-004</span><h3>Image storage: Cloudflare R2</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>Images and the manifest are stored in an R2 bucket. Images are served through a Pages Function (<code>/img/&lt;path&gt;</code>).</dd>
+    <dt>Why</dt><dd>R2 is real file storage with path-like names. The free tier gives 10 GB of storage and free downloads. 100 photos use about 1% of that.</dd>
+    <dt>Fallback</dt><dd>Cloudflare may require a payment method to activate R2. If that is not acceptable, we switch to Workers KV (1 GB, 25 MB per entry, 1,000 writes per day on the free plan). The code changes little.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-005</span><h3>Data model: one manifest file, category prefixes</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>A single <code>manifest.json</code> in R2 is the source of truth for categories, images and order. The order of an array is the display order. Image files use the category as a path prefix.</dd>
+    <dt>Why</dt><dd>Changing the order only rewrites one small file. Files never need to be renamed.</dd>
+    <dt>Example</dt><dd>
+<pre><code>landscape/a7f3-full.jpg
+landscape/a7f3-thumb.jpg
+manifest.json
+
+{
+  "categories": [
+    { "id": "landscape", "title": "Landscape" },
+    { "id": "portrait",  "title": "Portrait" }
+  ],
+  "images": {
+    "landscape": [ { "id": "a7f3", "title": "Fog over the lake" } ],
+    "portrait":  []
+  }
+}</code></pre></dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-006</span><h3>Image processing in the browser</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>The admin page resizes each image in the browser before upload. It creates a large version (about 2400 px wide) and a thumbnail (about 600 px wide).</dd>
+    <dt>Why</dt><dd>Cloudflare's image resizing is not part of the free plan. Resizing in the browser needs no server-side processing.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-007</span><h3>CMS security: HTTP Basic Authentication</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>A middleware function protects <code>/admin</code> and <code>/api/admin/*</code> with HTTP Basic Authentication. The password is stored as the Cloudflare secret <code>ADMIN_PASSWORD</code>, never in the code.</dd>
+    <dt>Why</dt><dd>It takes about 10 minutes to build and needs no login page.</dd>
+    <dt>Limits</dt><dd>There is no protection against password guessing, so the password must be long. There is no real logout.</dd>
+    <dt>Later</dt><dd>We can switch to Cloudflare Access (email one-time code login, free up to 50 users) without changing the site.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-008</span><h3>Ordering UI: up/down buttons first</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>The first admin version uses "up" and "down" buttons to reorder images. Drag and drop may follow later.</dd>
+    <dt>Why</dt><dd>It is faster to build and fits the time budget.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-009</span><h3>Deployment with Wrangler</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>We create Cloudflare resources and deploy with the <code>wrangler</code> command-line tool.</dd>
+  </dl>
+</section>
+
+<h2>Planned API</h2>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Access</th><th>Purpose</th></tr>
+  <tr><td>GET</td><td><code>/api/manifest</code></td><td>Public</td><td>Returns the manifest.</td></tr>
+  <tr><td>GET</td><td><code>/img/&lt;path&gt;</code></td><td>Public</td><td>Returns an image from R2.</td></tr>
+  <tr><td>POST</td><td><code>/api/admin/upload</code></td><td>Admin</td><td>Stores the full image and thumbnail.</td></tr>
+  <tr><td>PUT</td><td><code>/api/admin/manifest</code></td><td>Admin</td><td>Saves categories and order.</td></tr>
+  <tr><td>DELETE</td><td><code>/api/admin/image/&lt;id&gt;</code></td><td>Admin</td><td>Deletes an image.</td></tr>
+</table>
+
+<h2>Open questions</h2>
+<ul>
+  <li>Photographer name, bio text and contact details.</li>
+  <li>Final list of categories (4–6).</li>
+  <li>Does activating R2 require a payment method on this Cloudflare account? If yes, is that acceptable? (See D-004.)</li>
+  <li>Where to place the HTML5 UP attribution.</li>
+</ul>
+
+<h2>Changelog</h2>
+<table>
+  <tr><th>Date</th><th>Change</th></tr>
+  <tr><td>2026-10-19</td><td>File created. Recorded D-001 to D-009 from phases 1 and 2.</td></tr>
+  <tr><td>2026-10-19</td><td>Added <code>.gitignore</code>. Secrets for local development go in <code>.dev.vars</code>, which is ignored. Real photos live in R2, not in Git.</td></tr>
+</table>
+
+</main>
+</body>
+</html>
