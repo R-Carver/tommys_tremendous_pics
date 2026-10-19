@@ -1,38 +1,59 @@
 # tommys_pics
 
-Portfolio website for a photographer. Static frontend (based on [Lens by HTML5 UP](https://html5up.net/lens))
-on Cloudflare Pages, images in Cloudflare R2, with a minimal admin page.
+Portfolio website for a photographer. Static frontend (based on [Lens by HTML5 UP](https://html5up.net/lens)),
+a small Cloudflare Worker backend, images in Cloudflare R2, and (soon) a minimal admin page.
 
-- Project decisions: [`docs/decisions.html`](docs/decisions.html)
+- Project decisions, plan and progress: [`docs/decisions.html`](docs/decisions.html)
 - Frontend/backend contract: [`docs/api-contract.md`](docs/api-contract.md)
 
-## Project layout
+## Repository layout
 
 ```
-public/                 Static site (deployed as-is, no build step)
+frontend/public/        Static site, deployed as-is (no build step)
   index.html
-  assets/js/gallery.js  Loads GET /api/gallery and renders thumbnails, then starts Lens
+  assets/js/gallery.js  Loads GET /api/gallery, renders thumbnails, then starts Lens
   assets/js/main.js     Lens viewer (HTML5 UP, one small patch marked [tommys_pics])
   assets/css/custom.css Project style overrides (main.css stays original)
-dev/
-  prepare-mock-data.mjs Builds .mock-data/ from local-images/
-  mock-server.mjs       Local mock of the API + image hosting (no dependencies)
+frontend/mock/          Mock API for frontend-only development
+backend/src/            Cloudflare Worker: /api/gallery, /img/*, manifest handling
+backend/scripts/        seed-local.mjs: fills the local simulated R2 bucket
+tools/                  Dev tooling shared by both (image resizing), never deployed
+tests/                  Playwright smoke tests
 docs/                   Decisions and API contract
+wrangler.jsonc          Cloudflare config joining frontend and backend
 local-images/           Your test photos, one folder per category (git-ignored)
-.mock-data/             Generated mock data (git-ignored)
 ```
 
-## Run the frontend locally (mock backend)
+The frontend and backend only talk through HTTP (`GET /api/gallery`, image URLs). The frontend never imports backend code.
 
-Requires Node.js 18 or newer.
+## Setup
+
+Requires Node.js 20 or newer.
 
 ```bash
-npm install            # installs sharp, used only to prepare mock images
-npm run mock:prepare   # local-images/<category>/* -> .mock-data/
+npm install
+npx playwright install chromium   # only needed for the tests
+```
+
+Put test photos into `local-images/<category>/`, for example `local-images/landscape/lake.jpg`.
+
+## Run locally with the real backend (simulated R2)
+
+No Cloudflare account needed.
+
+```bash
+npm run seed   # resize local-images/ and load them into the local R2 bucket (.wrangler/)
+npm run dev    # http://localhost:8787
+```
+
+## Run the frontend alone against the mock API
+
+```bash
+npm run mock:prepare   # local-images/ -> .mock-data/
 npm run mock           # http://localhost:8788
 ```
 
-Test scenarios (the frontend does not know about them; the mock server reads them from the page URL):
+Mock scenarios (only the mock server knows about them):
 
 | URL | What it simulates |
 |---|---|
@@ -43,7 +64,16 @@ Test scenarios (the frontend does not know about them; the mock server reads the
 | `/?scenario=broken` | One image file is missing |
 | `/?scenario=single` | Only one image |
 
+## Tests
+
+Start a server first, then run the tests against it in a second terminal:
+
+```bash
+npm run dev    # then: npm run test:e2e        (frontend + backend API tests)
+npm run mock   # then: npm run test:e2e:mock   (frontend tests incl. error scenarios)
+```
+
 ## License
 
 The site design is based on Lens by HTML5 UP, licensed under
-[Creative Commons Attribution 3.0](public/LICENSE-HTML5UP.txt). The footer credit must stay.
+[Creative Commons Attribution 3.0](frontend/public/LICENSE-HTML5UP.txt). The footer credit must stay.

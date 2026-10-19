@@ -2,7 +2,7 @@
 //
 //   GET /api/gallery  -> .mock-data/gallery.json (shape depends on the scenario)
 //   GET /img/*        -> files from .mock-data/img/
-//   GET /*            -> static files from public/
+//   GET /*            -> static files from frontend/public/
 //
 // Scenarios are chosen with ?scenario=... on the PAGE URL, e.g. http://localhost:8788/?scenario=empty
 // The server reads it from the Referer header of the API request, so the frontend code knows nothing about it.
@@ -18,9 +18,10 @@ import { createReadStream } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const PUBLIC_DIR = path.join(ROOT, 'public');
+const ROOT = process.env.PROJECT_ROOT || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const PUBLIC_DIR = path.join(ROOT, 'frontend', 'public');
 const MOCK_DIR = path.join(ROOT, '.mock-data');
 const PORT = Number(process.env.PORT) || 8788;
 

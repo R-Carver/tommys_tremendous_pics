@@ -1,14 +1,20 @@
 {
   "name": "tommys-pics",
   "private": true,
-  "version": "0.1.0",
-  "description": "Portfolio website for a photographer. Static frontend on Cloudflare Pages, images in R2.",
+  "version": "0.2.0",
+  "description": "Portfolio website for a photographer. Static frontend + Cloudflare Worker backend, images in R2.",
   "type": "module",
   "scripts": {
-    "mock:prepare": "node dev/prepare-mock-data.mjs",
-    "mock": "node dev/mock-server.mjs"
+    "mock:prepare": "node frontend/mock/prepare-mock-data.mjs",
+    "mock": "node frontend/mock/mock-server.mjs",
+    "seed": "node backend/scripts/seed-local.mjs",
+    "dev": "wrangler dev",
+    "test:e2e": "playwright test",
+    "test:e2e:mock": "MOCK=1 BASE_URL=http://localhost:8788 playwright test"
   },
   "devDependencies": {
-    "sharp": "^0.33.5"
+    "@playwright/test": "^1.56.0",
+    "sharp": "^0.33.5",
+    "wrangler": "^4.151.2"
   }
 }

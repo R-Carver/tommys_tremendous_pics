@@ -48,6 +48,8 @@
   .tag.accepted { background: var(--ok-bg); color: var(--ok-fg); }
   .tag.open { background: var(--open-bg); color: var(--open-fg); }
   .tag.superseded { background: var(--old-bg); color: var(--old-fg); }
+  .tag.todo { background: var(--line); color: var(--muted); }
+  .tag.doing { background: var(--open-bg); color: var(--open-fg); }
   dl { margin: 0; display: grid; grid-template-columns: 120px 1fr; gap: 4px 12px; }
   dt { color: var(--muted); font-size: .9rem; }
   dd { margin: 0; }
@@ -75,7 +77,18 @@
   <tr><th>Phase</th><th>Goal</th><th>Status</th></tr>
   <tr><td>1</td><td>Choose a template as the starting point.</td><td><span class="tag accepted">Done</span></td></tr>
   <tr><td>2</td><td>Define features and choose the technology.</td><td><span class="tag accepted">Done</span></td></tr>
-  <tr><td>3</td><td>Implement, host, and build the minimal CMS.</td><td><span class="tag open">In progress: frontend draft done</span></td></tr>
+  <tr><td>3</td><td>Implement, host, and build the minimal CMS.</td><td><span class="tag open">In progress (see plan below)</span></td></tr>
+</table>
+
+<h2>Phase 3 plan and progress</h2>
+<p class="lead">Agreed on 2026-10-19. Update the status column as work progresses.</p>
+<table>
+  <tr><th>Step</th><th>Content</th><th>Status</th></tr>
+  <tr><td>0</td><td>Frontend draft against a mock API (D-010 to D-013).</td><td><span class="tag accepted">Done</span></td></tr>
+  <tr><td>1</td><td><strong>Backend read path, local.</strong> Worker with <code>GET /api/gallery</code> and <code>GET /img/*</code> reading from R2. Run locally with <code>wrangler dev</code> and a simulated R2 bucket. Seed script loads <code>local-images/</code>. Frontend must work unchanged. Repo split into frontend and backend. Automated smoke tests.</td><td><span class="tag accepted">Done</span></td></tr>
+  <tr><td>2</td><td><strong>Admin and write path.</strong> Basic Auth middleware for <code>/admin</code> and <code>/api/admin/*</code>. Upload (browser resizes), save order and categories, delete. One plain admin page with up/down buttons, category dropdown and delete button.</td><td><span class="tag todo">Next</span></td></tr>
+  <tr><td>3</td><td><strong>Deploy to Cloudflare</strong> (needs David). <code>wrangler login</code>, create the R2 bucket (check payment method question), set secret <code>ADMIN_PASSWORD</code>, <code>wrangler deploy</code>, upload the first real images through the admin page.</td><td><span class="tag todo">Open</span></td></tr>
+  <tr><td>4</td><td><strong>Polish before going live.</strong> Self-host the Roboto font (GDPR), replace placeholder texts, decide on visible categories (D-011), favicon (done), metadata for link previews.</td><td><span class="tag todo">Open</span></td></tr>
 </table>
 
 <h2>Decisions</h2>
@@ -91,11 +104,12 @@
 </section>
 
 <section class="decision">
-  <header><span class="id">D-002</span><h3>Hosting: Cloudflare Pages (free plan)</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <header><span class="id">D-002</span><h3>Hosting: Cloudflare Pages (free plan)</h3><span class="tag superseded">Superseded by D-014</span><span class="date">2026-10-19</span></header>
   <dl>
     <dt>Decision</dt><dd>The site is hosted on Cloudflare Pages under the free <code>*.pages.dev</code> address.</dd>
     <dt>Why</dt><dd>It is free, fast, and can run small server functions next to the static site.</dd>
     <dt>Notes</dt><dd>A custom domain can be added later without changing the code.</dd>
+    <dt>Update</dt><dd>2026-10-19: replaced by Workers with static assets (D-014). Still Cloudflare, still free, address becomes <code>*.workers.dev</code>.</dd>
   </dl>
 </section>
 
@@ -104,6 +118,7 @@
   <dl>
     <dt>Decision</dt><dd>The public site is static. It loads the image list at runtime from an API. A small admin page and a few Pages Functions handle upload, ordering and deletion. No framework and no build step.</dd>
     <dt>Why</dt><dd>Changes appear immediately without a rebuild. No external accounts are needed. The code is small (about 200–300 lines) and fully under our control.</dd>
+    <dt>Update</dt><dd>2026-10-19: the backend runs as a Worker with static assets instead of Pages Functions (D-014). The architecture is otherwise unchanged.</dd>
     <dt>Alternatives</dt><dd>Option A: images in the Git repository and a Git-based CMS (Decap CMS or Sveltia CMS). Rejected because every change needs a rebuild, the admin needs a GitHub account, and the OAuth login setup is too slow for the time budget.</dd>
   </dl>
 </section>
@@ -111,7 +126,7 @@
 <section class="decision">
   <header><span class="id">D-004</span><h3>Image storage: Cloudflare R2</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
   <dl>
-    <dt>Decision</dt><dd>Images and the manifest are stored in an R2 bucket. Images are served through a Pages Function (<code>/img/&lt;path&gt;</code>).</dd>
+    <dt>Decision</dt><dd>Images and the manifest are stored in an R2 bucket named <code>tommys-pics-images</code> (binding <code>BUCKET</code>). Images are served by the Worker at <code>/img/&lt;path&gt;</code>.</dd>
     <dt>Why</dt><dd>R2 is real file storage with path-like names. The free tier gives 10 GB of storage and free downloads. 100 photos use about 1% of that.</dd>
     <dt>Fallback</dt><dd>Cloudflare may require a payment method to activate R2. If that is not acceptable, we switch to Workers KV (1 GB, 25 MB per entry, 1,000 writes per day on the free plan). The code changes little.</dd>
   </dl>
@@ -169,7 +184,7 @@ manifest.json
 <section class="decision">
   <header><span class="id">D-009</span><h3>Deployment with Wrangler</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
   <dl>
-    <dt>Decision</dt><dd>We create Cloudflare resources and deploy with the <code>wrangler</code> command-line tool.</dd>
+    <dt>Decision</dt><dd>We create Cloudflare resources and deploy with the <code>wrangler</code> command-line tool. Since D-014 the deploy command is <code>wrangler deploy</code> (config: <code>wrangler.jsonc</code>).</dd>
   </dl>
 </section>
 
@@ -194,9 +209,9 @@ manifest.json
 <section class="decision">
   <header><span class="id">D-012</span><h3>Local development with a mock API</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
   <dl>
-    <dt>Decision</dt><dd>Stage 1 (now): <code>dev/mock-server.mjs</code> serves <code>public/</code>, <code>/api/gallery</code> and <code>/img/*</code> from generated mock data. <code>dev/prepare-mock-data.mjs</code> builds that data from <code>local-images/&lt;category&gt;/</code> with the same sizes the admin page will produce. Stage 2 (later): <code>wrangler pages dev</code> runs the real backend locally with a simulated R2 bucket (Miniflare).</dd>
+    <dt>Decision</dt><dd>Stage 1 (now): <code>frontend/mock/mock-server.mjs</code> serves <code>public/</code>, <code>/api/gallery</code> and <code>/img/*</code> from generated mock data. <code>frontend/mock/prepare-mock-data.mjs</code> builds that data from <code>local-images/&lt;category&gt;/</code> with the same sizes the admin page will produce. Stage 2 (now done, see D-016): <code>wrangler dev</code> runs the real backend locally with a simulated R2 bucket (Miniflare).</dd>
     <dt>Why</dt><dd>Everything must be testable locally. The mock can simulate situations on demand (<code>?scenario=empty|error|slow|broken|single</code>), which the real backend cannot easily do.</dd>
-    <dt>Notes</dt><dd>The mock server uses port 8788, the same default as <code>wrangler pages dev</code>. The scenario is read from the page URL via the Referer header, so the frontend code contains no test logic.</dd>
+    <dt>Notes</dt><dd>The mock server uses port 8788, so it can run next to <code>wrangler dev</code> (port 8787). The scenario is read from the page URL via the Referer header, so the frontend code contains no test logic.</dd>
   </dl>
 </section>
 
@@ -216,11 +231,63 @@ manifest.json
   </dl>
 </section>
 
+<section class="decision">
+  <header><span class="id">D-014</span><h3>Workers with static assets instead of Pages</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>The site runs as one Cloudflare Worker with static assets. <code>wrangler.jsonc</code> points the static files to <code>frontend/public</code> and the Worker code to <code>backend/src/index.js</code>. The paths <code>/api/*</code> and <code>/img/*</code> always go to the Worker (<code>run_worker_first</code>). Everything else is served as a static file.</dd>
+    <dt>Why</dt><dd>Pages Functions must live in a folder named <code>functions/</code> at the project root, next to the static files. That blocks a clean frontend/backend split. With Workers, both locations are free to choose. Workers with static assets is also the setup Cloudflare currently recommends for new projects. Static file requests are free and do not count against the Worker limit (100,000 requests per day on the free plan).</dd>
+    <dt>Later</dt><dd>For the admin page (step 2), <code>/admin*</code> is added to <code>run_worker_first</code>, so the Worker can check the password before the admin page is served.</dd>
+    <dt>Alternatives</dt><dd>Keep Pages (D-002) with <code>functions/</code> at the root. Rejected because of the folder constraint.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-015</span><h3>Repository structure: frontend and backend separated</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd>
+<pre><code>frontend/public/   static site, deployed as-is (no build step)
+frontend/mock/     mock API server + mock data builder (frontend dev only)
+backend/src/       Worker: routing, /api/gallery, /img/*, manifest handling
+backend/scripts/   seed-local.mjs: fills the LOCAL simulated R2 bucket
+tools/             dev tooling shared by both (image resizing)
+tests/             Playwright smoke tests (frontend + backend API)
+docs/              decisions, API contract
+wrangler.jsonc     deployment config that joins frontend and backend</code></pre></dd>
+    <dt>Rules</dt><dd>The frontend never imports backend code. The only connection is the HTTP contract (D-010). Code in <code>tools/</code> is never deployed.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-016</span><h3>Local backend: wrangler dev with simulated R2</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd><code>npm run seed</code> fills a local simulated R2 bucket (stored in <code>.wrangler/</code>) from <code>local-images/</code>. It uses Wrangler's <code>getPlatformProxy()</code>, which always works locally and never touches the real bucket. <code>npm run dev</code> runs the Worker on port 8787 with the same bucket. No Cloudflare account is needed for local work.</dd>
+    <dt>Verified</dt><dd>The frontend works against the real backend without any change, which confirms the boundary from D-010.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-017</span><h3>Backend security rules for image delivery</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd><code>/img/</code> only serves keys of the form <code>&lt;category&gt;/&lt;id&gt;-full.jpg</code> or <code>-thumb.jpg</code>. Everything else returns 404, including <code>manifest.json</code> and paths with <code>..</code>.</dd>
+    <dt>Caching</dt><dd>Images: <code>public, max-age=31536000, immutable</code> plus ETag, and repeat requests return 304. Gallery: <code>no-cache</code>.</dd>
+    <dt>Concurrency</dt><dd>Only one admin edits at a time. If two saves of the manifest overlap, the last one wins. This is accepted for now.</dd>
+  </dl>
+</section>
+
+<section class="decision">
+  <header><span class="id">D-018</span><h3>Automated smoke tests with Playwright</h3><span class="tag accepted">Accepted</span><span class="date">2026-10-19</span></header>
+  <dl>
+    <dt>Decision</dt><dd><code>tests/frontend.spec.mjs</code> checks the gallery only through the API contract, so it must pass against the mock and against the real backend. <code>tests/backend.spec.mjs</code> checks the API itself (contract, image headers, 304, blocked paths). Error scenarios run only against the mock. Each test runs on a desktop and a mobile viewport.</dd>
+    <dt>Commands</dt><dd><code>npm run dev</code> + <code>npm run test:e2e</code> (real backend), <code>npm run mock</code> + <code>npm run test:e2e:mock</code> (mock). One-time setup: <code>npx playwright install chromium</code>.</dd>
+    <dt>Result</dt><dd>2026-10-19: real backend 15 passed, mock 12 passed, and 45 of 45 passed in three repeated runs (no random failures).</dd>
+  </dl>
+</section>
+
 <h2>Planned API</h2>
 <table>
   <tr><th>Method</th><th>Path</th><th>Access</th><th>Purpose</th></tr>
-  <tr><td>GET</td><td><code>/api/gallery</code></td><td>Public</td><td>Returns categories and images with URLs (see D-010).</td></tr>
-  <tr><td>GET</td><td><code>/img/&lt;path&gt;</code></td><td>Public</td><td>Returns an image from R2.</td></tr>
+  <tr><td>GET</td><td><code>/api/gallery</code></td><td>Public</td><td>Returns categories and images with URLs (see D-010). <em>Implemented.</em></td></tr>
+  <tr><td>GET</td><td><code>/img/&lt;category&gt;/&lt;id&gt;-&lt;full|thumb&gt;.jpg</code></td><td>Public</td><td>Returns an image from R2 (D-017). <em>Implemented.</em></td></tr>
   <tr><td>POST</td><td><code>/api/admin/upload</code></td><td>Admin</td><td>Stores the full image and thumbnail.</td></tr>
   <tr><td>PUT</td><td><code>/api/admin/manifest</code></td><td>Admin</td><td>Saves categories and order.</td></tr>
   <tr><td>DELETE</td><td><code>/api/admin/image/&lt;id&gt;</code></td><td>Admin</td><td>Deletes an image.</td></tr>
@@ -240,6 +307,7 @@ manifest.json
 <table>
   <tr><th>Date</th><th>Change</th></tr>
   <tr><td>2026-10-19</td><td>File created. Recorded D-001 to D-009 from phases 1 and 2.</td></tr>
+  <tr><td>2026-10-19</td><td>Step 1 done: backend read path. Added the phase 3 plan and progress table, and D-014 to D-018. D-002 superseded (Workers instead of Pages). Repo split into <code>frontend/</code> and <code>backend/</code>. Added favicon.</td></tr>
   <tr><td>2026-10-19</td><td>Frontend draft: D-010 to D-013. Endpoint renamed from <code>/api/manifest</code> to <code>/api/gallery</code>. Added open questions about Google Fonts and placeholder texts.</td></tr>
   <tr><td>2026-10-19</td><td>Added <code>.gitignore</code>. Secrets for local development go in <code>.dev.vars</code>, which is ignored. Real photos live in R2, not in Git.</td></tr>
 </table>

@@ -1,0 +1,25 @@
+// Cloudflare deployment config. Ties the two halves of the repo together:
+//   frontend/public  -> static assets
+//   backend/src      -> Worker (API + image delivery)
+// See docs/decisions.html, D-014.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tommys-pics",
+  "main": "backend/src/index.js",
+  "compatibility_date": "2026-10-01",
+
+  "assets": {
+    "directory": "frontend/public",
+    "binding": "ASSETS",
+    // These paths always go to the Worker. Everything else is served as a static file first.
+    "run_worker_first": ["/api/*", "/img/*"]
+  },
+
+  "r2_buckets": [
+    { "binding": "BUCKET", "bucket_name": "tommys-pics-images" }
+  ],
+
+  "observability": { "enabled": true },
+
+  "dev": { "port": 8787 }
+}
